@@ -1,16 +1,15 @@
+using AdminService.ExtensionMethods;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using AdminService.Interfaces;
+using AdminService.Models;
+using AdminService.Services;
+using Microsoft.Azure.Cosmos;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AdminService
 {
@@ -27,11 +26,33 @@ namespace AdminService
           public void ConfigureServices(IServiceCollection services)
           {
 
-               services.AddControllers();
+               services.AddControllers().AddNewtonsoftJson();
                services.AddSwaggerGen(c =>
                {
                     c.SwaggerDoc("v1", new OpenApiInfo { Title = "AdminService", Version = "v1" });
                });
+               services.AddAuthentication("Bearer")
+                    .AddJwtBearer("Bearer", options =>
+                    {
+                         var identityConfig = Configuration.GetSection("Identity");
+                         var identityAuthority = identityConfig["Authority"];
+
+                         options.Authority = identityAuthority;
+
+                         options.TokenValidationParameters = new TokenValidationParameters
+                         {
+                              ValidateAudience = false
+                         };
+                    });
+
+               var cosmosConfig = Configuration.GetSection("CosmosDb");
+               var cosmosClient = GetCosmosClientInstance(cosmosConfig);
+               var cosmosDbName = cosmosConfig["DatabaseName"];
+
+               services.AddSingleton<ICosmosDbService<Ticket>>(
+                    new CosmosDbService<Ticket>(cosmosClient, cosmosDbName, "tickets"));
+               services.AddSingleton<ICosmosDbService<Airport>>(
+                    new CosmosDbService<Airport>(cosmosClient, cosmosDbName, "airports"));
           }
 
           // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,12 +69,23 @@ namespace AdminService
 
                app.UseRouting();
 
+               app.UseAuthentication();
                app.UseAuthorization();
+
+               app.RegisterServiceToDiscovery(Configuration);
 
                app.UseEndpoints(endpoints =>
                {
                     endpoints.MapControllers();
                });
+          }
+
+          private static CosmosClient GetCosmosClientInstance(IConfigurationSection configurationSection)
+          {
+               var account = configurationSection["Account"];
+               var key = configurationSection["Key"];
+
+               return new CosmosClient(account, key);
           }
      }
 }

@@ -11,6 +11,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CustomerService.ExtensionMethods;
+using CustomerService.Interfaces;
+using CustomerService.Models;
+using CustomerService.Services;
+using Microsoft.Azure.Cosmos;
 
 namespace CustomerService
 {
@@ -32,6 +37,15 @@ namespace CustomerService
                {
                     c.SwaggerDoc("v1", new OpenApiInfo { Title = "CustomerService", Version = "v1" });
                });
+
+               var cosmosConfig = Configuration.GetSection("CosmosDb");
+               var cosmosClient = GetCosmosClientInstance(cosmosConfig);
+               var cosmosDbName = cosmosConfig["DatabaseName"];
+
+               services.AddSingleton<ICosmosDbService<Ticket>>(
+                    new CosmosDbService<Ticket>(cosmosClient, cosmosDbName, "tickets"));
+               services.AddSingleton<ICosmosDbService<Airport>>(
+                    new CosmosDbService<Airport>(cosmosClient, cosmosDbName, "airports"));
           }
 
           // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,10 +64,20 @@ namespace CustomerService
 
                app.UseAuthorization();
 
+               app.RegisterServiceToDiscovery(Configuration);
+
                app.UseEndpoints(endpoints =>
                {
                     endpoints.MapControllers();
                });
+          }
+
+          private static CosmosClient GetCosmosClientInstance(IConfigurationSection configurationSection)
+          {
+               var account = configurationSection["Account"];
+               var key = configurationSection["Key"];
+
+               return new CosmosClient(account, key);
           }
      }
 }
