@@ -29,9 +29,11 @@ namespace CacheService.Controllers
           {
                if (_cacheService.Cache.ContainsKey(_currentServiceRequest.ServiceName))
                {
+                    _logger.LogInformation($"{_currentServiceRequest.ServiceName} has saved cached data");
                     return _cacheService.Cache[_currentServiceRequest.ServiceName].FirstOrDefault(cache => cache.Key == key)?.Cache;
                }
 
+               _logger.LogInformation($"{_currentServiceRequest.ServiceName} doesn't have saved cache data");
                return null;
           }
 
@@ -40,10 +42,12 @@ namespace CacheService.Controllers
           {
                if(_cacheService.Cache.ContainsKey(_currentServiceRequest.ServiceName))
                {
+                    _logger.LogInformation($"Add Service {_currentServiceRequest.ServiceName} to cache data");
                     _cacheService.Cache[_currentServiceRequest.ServiceName].Add(cacheItem);
                     return Ok();
                }
 
+               _logger.LogInformation($"Add Cache Data to the existing {_currentServiceRequest.ServiceName}");
                _cacheService.Cache.Add(new KeyValuePair<string, IList<CacheItem>>(
                     _currentServiceRequest.ServiceName, 
                     new List<CacheItem>()

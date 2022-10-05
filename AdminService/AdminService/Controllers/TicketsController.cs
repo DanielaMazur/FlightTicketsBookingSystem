@@ -28,9 +28,13 @@ namespace AdminService.Controllers
           {
                if (ticket.FromAirportId == null || ticket.ToAirportId == null || ticket.FromAirportId == ticket.ToAirportId)
                {
+                    _logger.LogError("Some required ticket info is missing");
                     return BadRequest();
                }
-               return Ok(await _ticketsCosmosDbService.AddAsync(ticket));
+
+               var createdTicket = await _ticketsCosmosDbService.AddAsync(ticket);
+               _logger.LogInformation($"Ticket with id {createdTicket.Id} created successfully");
+               return Ok(createdTicket);
           }
      }
 }

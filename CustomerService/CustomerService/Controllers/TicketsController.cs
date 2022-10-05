@@ -32,6 +32,7 @@ namespace CustomerService.Controllers
                var cacheData = await _cacheService.GetCacheData<IEnumerable<Ticket>>("tickets");
                if (cacheData == null)
                {
+                    _logger.LogInformation("Get tickets from the DB");
                     var tickets = (await _ticketCosmosDbService.GetAllAsync()).ToList();
                     await _cacheService.PostCacheData(new CacheItem<IEnumerable<Ticket>>()
                     {
@@ -42,6 +43,7 @@ namespace CustomerService.Controllers
                     return tickets;
                }
 
+               _logger.LogInformation("Get tickets from the Cache");
                return cacheData;
           }
      }
