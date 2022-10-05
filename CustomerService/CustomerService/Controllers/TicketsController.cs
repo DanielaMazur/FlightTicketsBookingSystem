@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,18 +14,35 @@ namespace CustomerService.Controllers
      {
           private readonly ILogger<TicketsController> _logger;
           private readonly ICosmosDbService<Ticket> _ticketCosmosDbService;
+          private readonly ICacheService _cacheService;
+
           public TicketsController(
                ILogger<TicketsController> logger,
-               ICosmosDbService<Ticket> ticketCosmosDbService)
+               ICosmosDbService<Ticket> ticketCosmosDbService,
+               ICacheService cacheService)
           {
                _logger = logger;
                _ticketCosmosDbService = ticketCosmosDbService;
+               _cacheService = cacheService;
           }
 
           [HttpGet]
           public async Task<IEnumerable<Ticket>> GetTickets()
           {
-               return await _ticketCosmosDbService.GetAllAsync();
+               var cacheData = await _cacheService.GetCacheData<IEnumerable<Ticket>>("tickets");
+               if (cacheData == null)
+               {
+                    var tickets = (await _ticketCosmosDbService.GetAllAsync()).ToList();
+                    await _cacheService.PostCacheData(new CacheItem<IEnumerable<Ticket>>()
+                    {
+                         Key = "tickets",
+                         Cache = tickets
+                    });
+
+                    return tickets;
+               }
+
+               return cacheData;
           }
      }
 }
