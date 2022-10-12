@@ -1,8 +1,11 @@
 using System.Linq;
 using System.Reflection;
 using AuthService.ExtensionMethods;
+using AuthService.Interface;
+using AuthService.Services;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Mappers;
+using IdentityServer4.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -26,7 +29,13 @@ namespace AuthService
           {
                var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
-               var builder = services.AddIdentityServer()
+               var builder = services.AddIdentityServer(options =>
+                    {
+                         options.Events.RaiseSuccessEvents = true;
+                         options.Events.RaiseFailureEvents = true;
+                         options.Events.RaiseErrorEvents = true;
+                         options.Events.RaiseInformationEvents = true;
+                    })
                     .AddConfigurationStore(options =>
                     {
                          options.ConfigureDbContext = b => b.UseSqlServer(Configuration.GetConnectionString("AuthDB"),
@@ -40,6 +49,10 @@ namespace AuthService
                     .AddTestUsers(Config.GetUsers());
 
                builder.AddDeveloperSigningCredential();
+
+               services.AddControllers();
+               services.AddSingleton<IEventSink, EventsService>();
+               services.AddSingleton<IEventsService>((x) => (IEventsService)x.GetService<IEventSink>());
           }
 
           // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -52,6 +65,13 @@ namespace AuthService
                }
 
                app.UseIdentityServer();
+
+               app.UseRouting();
+
+               app.UseEndpoints(endpoints =>
+               {
+                    endpoints.MapControllers();
+               });
 
                app.RegisterServiceToDiscovery(Configuration);
 
