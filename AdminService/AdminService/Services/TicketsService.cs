@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using AdminService.Controllers;
 using AdminService.Interfaces;
 using AdminService.Models;
 using Microsoft.AspNetCore.Http;
@@ -9,11 +8,11 @@ namespace AdminService.Services
 {
      public class TicketsService: ITicketsService
      {
-          private readonly ILogger<TicketsController> _logger;
+          private readonly ILogger<ITicketsService> _logger;
           private readonly ICosmosDbService<Ticket> _ticketsCosmosDbService;
 
           public TicketsService(
-               ILogger<TicketsController> logger,
+               ILogger<ITicketsService> logger,
                ICosmosDbService<Ticket> ticketsCosmosDbService)
           {
                _logger = logger;
