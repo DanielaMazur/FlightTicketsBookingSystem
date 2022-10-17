@@ -40,16 +40,22 @@ def login():
             status=r.status_code,
             content_type=r.headers['content-type'])
 
+counter = 0
+
 @app.route("/tickets", methods = ['POST', 'GET'])
 def getTickets():
+    global counter
     if request.method == 'GET':
         filteredServices = filter(lambda s: s["Name"] == ServiceNames.CustomerService.value, services)
         serviceInstances = list(filteredServices)
         if len(serviceInstances) == 0:
             print("No", ServiceNames.CustomerService.value, "found")
             return 'Error'
-        # Round robin logic will be implemented here
-        service = serviceInstances[0]
+
+        # Round robin logic
+        service = serviceInstances[counter % len(serviceInstances)]
+        counter += 1
+
         r = requests.get(service["Url"] + "/tickets", verify=False)
 
         return Response(
@@ -69,4 +75,29 @@ def getTickets():
         return Response(
             r.text,
             status=r.status_code)
+            
+@app.route("/tickets/<id>", methods = ['PATCH', 'DELETE'])
+def manageTickets(id):
+    if request.method == "PATCH":
+        filteredServices = filter(lambda s: s["Name"] == ServiceNames.AdminService.value, services)
+        serviceInstances = list(filteredServices)
+        if len(serviceInstances) == 0:
+            print("No", ServiceNames.AdminService.value, "found")
+            return 'Error'
+        service = serviceInstances[0]
+        r = requests.patch(service["Url"] + "/tickets/" + id, json=request.json, headers = request.headers, verify=False)
+        return Response(
+            r.text,
+            status=r.status_code)
 
+    if request.method == "DELETE":
+        filteredServices = filter(lambda s: s["Name"] == ServiceNames.AdminService.value, services)
+        serviceInstances = list(filteredServices)
+        if len(serviceInstances) == 0:
+            print("No", ServiceNames.AdminService.value, "found")
+            return 'Error'
+        service = serviceInstances[0]
+        r = requests.delete(service["Url"] + "/tickets/" + id, verify=False)
+        return Response(
+            r.text,
+            status=r.status_code)

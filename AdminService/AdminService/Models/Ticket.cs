@@ -10,8 +10,6 @@ namespace AdminService.Models
 
           public DateTime DepartureTime { get; set; }
 
-          //public TimeSpan FlightDuration { get; set; }
-
           public decimal Price { get; set; }
      }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,8 +30,14 @@ namespace CacheService.Controllers
           {
                if (_cacheService.Cache.ContainsKey(_currentServiceRequest.ServiceName))
                {
+                    var cachedItem = _cacheService.Cache[_currentServiceRequest.ServiceName].FirstOrDefault(cache => cache.Key == key);
+                    if (cachedItem?.ExpirationTime < DateTime.Now)
+                    {
+                         _logger.LogInformation($"{_currentServiceRequest.ServiceName} has saved cached data, but it expired.");
+                         return null;
+                    }
                     _logger.LogInformation($"{_currentServiceRequest.ServiceName} has saved cached data");
-                    return _cacheService.Cache[_currentServiceRequest.ServiceName].FirstOrDefault(cache => cache.Key == key)?.Cache;
+                    return cachedItem?.Cache;
                }
 
                _logger.LogInformation($"{_currentServiceRequest.ServiceName} doesn't have saved cache data");

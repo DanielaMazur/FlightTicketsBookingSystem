@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using AdminService.Interfaces;
 using AdminService.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
 namespace AdminService.Controllers
 {
@@ -12,29 +13,66 @@ namespace AdminService.Controllers
      [Authorize]
      public class TicketsController : ControllerBase
      {
-          private readonly ILogger<TicketsController> _logger;
-          private readonly ICosmosDbService<Ticket> _ticketsCosmosDbService;
+          private readonly ITicketsService _ticketsService;
+          private readonly TaskTimeoutsConfig _taskTimeoutsConfig;
 
-          public TicketsController(
-               ILogger<TicketsController> logger,
-               ICosmosDbService<Ticket> ticketsCosmosDbService)
+          public TicketsController(ITicketsService ticketsService, IConfiguration configuration)
           {
-               _logger = logger;
-               _ticketsCosmosDbService = ticketsCosmosDbService;
+               _ticketsService = ticketsService;
+               _taskTimeoutsConfig = configuration.GetSection("TasksTimeouts").Get<TaskTimeoutsConfig>();
           }
 
           [HttpPost]
           public async Task<IActionResult> CreateTicket(Ticket ticket)
           {
-               if (ticket.FromAirportId == null || ticket.ToAirportId == null || ticket.FromAirportId == ticket.ToAirportId)
+               try
                {
-                    _logger.LogError("Some required ticket info is missing");
-                    return BadRequest();
+                    int timeout = _taskTimeoutsConfig.CreateTicket;
+                    var task = _ticketsService.CreateTicket(ticket);
+                    if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+                    {
+                         return Ok(task.Result);
+                    }
+
+                    return StatusCode(StatusCodes.Status408RequestTimeout);
+               }
+               catch (BadHttpRequestException exception)
+               {
+                    return BadRequest(exception.Message);
+               }
+          }
+
+          [HttpPatch("{id}")]
+          public async Task<IActionResult> UpdateTicket(string id, UpdateTicket updatedTicket)
+          {
+               try
+               {
+                    int timeout = _taskTimeoutsConfig.UpdateTicket;
+                    var task = _ticketsService.UpdateTicket(id, updatedTicket);
+                    if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+                    {
+                         return Ok(task.Result);
+                    }
+
+                    return StatusCode(StatusCodes.Status408RequestTimeout);
+               }
+               catch (BadHttpRequestException exception)
+               {
+                    return BadRequest(exception.Message);
+               }
+          }
+
+          [HttpDelete("{id}")]
+          public async Task<IActionResult> DeleteTicket(string id)
+          {
+               int timeout = _taskTimeoutsConfig.DeleteTicket;
+               var task = _ticketsService.DeleteTicket(id);
+               if (await Task.WhenAny(task, Task.Delay(timeout)) == task)
+               {
+                    return NoContent();
                }
 
-               var createdTicket = await _ticketsCosmosDbService.AddAsync(ticket);
-               _logger.LogInformation($"Ticket with id {createdTicket.Id} created successfully");
-               return Ok(createdTicket);
+               return StatusCode(StatusCodes.Status408RequestTimeout);
           }
      }
 }

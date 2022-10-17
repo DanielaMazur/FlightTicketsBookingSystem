@@ -53,6 +53,7 @@ namespace AdminService
                     new CosmosDbService<Ticket>(cosmosClient, cosmosDbName, "tickets"));
                services.AddSingleton<ICosmosDbService<Airport>>(
                     new CosmosDbService<Airport>(cosmosClient, cosmosDbName, "airports"));
+               services.AddScoped<ITicketsService, TicketsService>();
           }
 
           // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
