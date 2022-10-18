@@ -2,7 +2,10 @@ using System.Linq;
 using System.Reflection;
 using AuthService.ExtensionMethods;
 using AuthService.Interface;
+using AuthService.Middleware;
+using AuthService.Models;
 using AuthService.Services;
+using IdentityModel;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Mappers;
 using IdentityServer4.Services;
@@ -12,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AuthService
 {
@@ -63,6 +67,9 @@ namespace AuthService
                {
                     app.UseDeveloperExceptionPage();
                }
+
+               app.UseMiddleware<MaxConcurrentRequestsMiddleware>(Options.Create(Configuration
+                    .GetSection("MaxConcurrentTasks").Get<MaxConcurrentRequestsOptions>()));
 
                app.UseIdentityServer();
 
