@@ -2,6 +2,9 @@ from flask import Flask
 from flask import request, Response
 from enum import Enum
 import requests
+from datetime import datetime, timedelta
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class ServiceNames(Enum):
     AdminService = 'AdminService'
@@ -12,6 +15,8 @@ class ServiceNames(Enum):
 app = Flask(__name__)
 
 services = []
+CIRCUIT_BREAKER_MAX_ERRORS = 3
+CIRCUIT_BREAKER_THRESHOLD = 100 #seconds
 
 @app.route("/")
 def gateway():
@@ -33,7 +38,7 @@ def login():
         return 'Error'
     service = serviceInstances[0]
     headers = {"Content-Type": "application/x-www-form-urlencoded"} 
-    r = requests.post(service["Url"] + "/connect/token", request.form, headers = headers, verify=False)
+    r = requests.post(service["Url"] + "/connect/token", request.form, headers = headers, verify=False)        
 
     return Response(
             r.text,
@@ -55,8 +60,18 @@ def getTickets():
         # Round robin logic
         service = serviceInstances[counter % len(serviceInstances)]
         counter += 1
+        serviceIndex = services.index(service)
 
-        r = requests.get(service["Url"] + "/tickets", verify=False)
+        try:
+            r = requests.get(service["Url"] + "/tickets", verify=False)
+        except:
+            circuit_breaker(serviceIndex)
+            return Response(
+                    "Internal Server Error",
+                    status=500)
+
+        if r.status_code >= 500:
+            circuit_breaker(serviceIndex)
 
         return Response(
             r.text,
@@ -101,3 +116,28 @@ def manageTickets(id):
         return Response(
             r.text,
             status=r.status_code)
+
+def circuit_breaker(serviceIndex):
+    global services
+    service = services[serviceIndex]
+
+    if "Errors" in service:
+        if service["ErrorsLastUpdate"] + timedelta(seconds=CIRCUIT_BREAKER_THRESHOLD) < datetime.now():
+            print("RESET ERRORS, THRESHOLD EXCEDED")
+            service["Errors"] = 1
+        else:
+            print("INCREMENT ERRORS")
+            service["Errors"] += 1
+        service["ErrorsLastUpdate"] = datetime.now()
+    else:
+        service["Errors"] = 1
+        service["ErrorsLastUpdate"] = datetime.now()
+
+    if service["Errors"] > CIRCUIT_BREAKER_MAX_ERRORS:
+        print("CIRCUIT BREAKER MAX ERRORS EXCEDED FOR SERVICE ", service["Name"])
+        services.pop(serviceIndex)
+        return
+    
+    print("REQUEST FAILED", service)
+    
+    services[serviceIndex] = service    

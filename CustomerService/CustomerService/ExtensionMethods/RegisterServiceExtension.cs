@@ -15,13 +15,13 @@ namespace CustomerService.ExtensionMethods
           {
                HttpClient client = new();
                var serverAddressesFeature = app.ServerFeatures.Get<IServerAddressesFeature>();
-               var address = serverAddressesFeature.Addresses.First();
+              //  var address = serverAddressesFeature.Addresses.First();
 
                var json = JsonSerializer.Serialize(new
                {
                     Id = Guid.NewGuid().ToString(),
                     Name = "CustomerService",
-                    Url = address
+                    Url = "http://customerService:3000"
                });
                var data = new StringContent(json, Encoding.UTF8, "application/json");
 

@@ -30,7 +30,7 @@ namespace ConcurrentTaskLimitTestConsoleApp
 
                HttpClient client = new();
 
-               var req = new HttpRequestMessage(HttpMethod.Post, "https://localhost:6001/connect/token")
+               var req = new HttpRequestMessage(HttpMethod.Post, "http://authService:6000/connect/token")
                     { Content = new FormUrlEncodedContent(dict) };
                return client.SendAsync(req).ContinueWith(response =>
                {

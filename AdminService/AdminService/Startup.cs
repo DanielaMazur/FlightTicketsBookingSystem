@@ -38,6 +38,7 @@ namespace AdminService
                          var identityAuthority = identityConfig["Authority"];
 
                          options.Authority = identityAuthority;
+                         options.RequireHttpsMetadata = false;
 
                          options.TokenValidationParameters = new TokenValidationParameters
                          {

@@ -15,7 +15,7 @@ namespace PaymentService.ExtensionMethods
           {
                HttpClient client = new();
                var serverAddressesFeature = app.ServerFeatures.Get<IServerAddressesFeature>();
-               var address = serverAddressesFeature.Addresses.First();
+              //  var address = serverAddressesFeature.Addresses.First();
 
                var json = JsonSerializer.Serialize(new
                {

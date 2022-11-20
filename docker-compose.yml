@@ -1,0 +1,47 @@
+version: "3.9"
+services:
+  gateway:
+    container_name: gateway
+    build: ./Gateway
+    ports:
+      - "5000:5000"
+  discoveryService:
+    container_name: discoveryService
+    build: ./DicoveryService
+    ports:
+      - "9000:9000"
+    image: dicovery-service
+  authService:
+    container_name: authService
+    build: ./AuthService
+    ports:
+      - "6000:6000"
+    image: auth-service
+  cacheService:
+    container_name: cacheService
+    build: ./CacheService
+    ports:
+      - "7000:7000"
+    image: cache-service
+  adminService:
+    container_name: adminService
+    build: ./AdminService
+    ports:
+      - "4000:4000"
+    image: admin-service
+    depends_on:
+      - sqlServer
+  customerService:
+    container_name: customerService
+    build: ./CustomerService
+    ports:
+      - "3000:3000"
+    image: customer-service
+  sqlServer:
+    container_name: sqlServer
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "123Qwerty_"
+      ACCEPT_EULA: "Y"

@@ -15,13 +15,13 @@ namespace AdminService.ExtensionMethods
           {
                HttpClient client = new();
                var serverAddressesFeature = app.ServerFeatures.Get<IServerAddressesFeature>();
-               var address = serverAddressesFeature.Addresses.First();
+              //  var address = serverAddressesFeature.Addresses.First();
 
                var json = JsonSerializer.Serialize(new
                {
                     Id = Guid.NewGuid().ToString(),
                     Name = "AdminService",
-                    Url = address
+                    Url = "http://adminService:4000"
                });
                var data = new StringContent(json, Encoding.UTF8, "application/json");
 
