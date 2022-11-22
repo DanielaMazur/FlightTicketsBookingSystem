@@ -11,18 +11,27 @@ services:
     ports:
       - "9000:9000"
     image: dicovery-service
+    depends_on:
+      - gateway
+      - elasticsearch
   authService:
     container_name: authService
     build: ./AuthService
     ports:
       - "6000:6000"
     image: auth-service
+    depends_on:
+      - discoveryService
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
   cacheService:
     container_name: cacheService
     build: ./CacheService
     ports:
       - "7000:7000"
     image: cache-service
+    depends_on:
+      - discoveryService
   adminService:
     container_name: adminService
     build: ./AdminService
@@ -30,13 +39,16 @@ services:
       - "4000:4000"
     image: admin-service
     depends_on:
-      - sqlServer
+      - discoveryService
+      - authService
   customerService:
     container_name: customerService
     build: ./CustomerService
     ports:
       - "3000:3000"
     image: customer-service
+    depends_on:
+      - discoveryService
   sqlServer:
     container_name: sqlServer
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -45,3 +57,29 @@ services:
     environment:
       SA_PASSWORD: "123Qwerty_"
       ACCEPT_EULA: "Y"
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
+    ports:
+      - 9200:9200
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    environment:
+      - xpack.monitoring.enabled=true
+      - xpack.watcher.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.9.2
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_URL=http://localhost:9200
+
+volumes:
+  elasticsearch-data:
