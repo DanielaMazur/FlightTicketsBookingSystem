@@ -29,22 +29,22 @@ namespace CustomerService.Controllers
           [HttpGet]
           public async Task<IEnumerable<Ticket>> GetTickets()
           {
-               var cacheData = await _cacheService.GetCacheData<IEnumerable<Ticket>>("tickets");
-               if (cacheData == null)
-               {
+               // var cacheData = await _cacheService.GetCacheData<IEnumerable<Ticket>>("tickets");
+               // if (cacheData == null)
+               // {
                     _logger.LogInformation("Get tickets from the DB");
                     var tickets = (await _ticketCosmosDbService.GetAllAsync()).ToList();
-                    await _cacheService.PostCacheData(new CacheItem<IEnumerable<Ticket>>()
-                    {
-                         Key = "tickets",
-                         Cache = tickets
-                    });
+                    // await _cacheService.PostCacheData(new CacheItem<IEnumerable<Ticket>>()
+                    // {
+                    //      Key = "tickets",
+                    //      Cache = tickets
+                    // });
 
                     return tickets;
-               }
+               // }
 
-               _logger.LogInformation("Get tickets from the Cache");
-               return cacheData;
+               // _logger.LogInformation("Get tickets from the Cache");
+               // return cacheData;
           }
      }
 }

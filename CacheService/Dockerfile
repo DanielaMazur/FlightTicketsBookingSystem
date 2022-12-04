@@ -14,4 +14,4 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0
 ENV ASPNETCORE_URLS=http://+:7000
 WORKDIR /app
 COPY --from=build /app/CacheService/out .
-ENTRYPOINT ["dotnet", "CacheService.dll"]
+ENTRYPOINT ["/root/wait-for-it.sh", "discoveryService:9000", "-t", "120", "--", "dotnet", "CacheService.dll"]

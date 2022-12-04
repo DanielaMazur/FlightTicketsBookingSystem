@@ -13,15 +13,17 @@ namespace CacheService.ExtensionMethods
      {
           public static async void RegisterServiceToDiscovery(this IApplicationBuilder app, IConfiguration config)
           {
+               Console.WriteLine($"app_host: ${config["app_host"]}");
+
                HttpClient client = new();
                var serverAddressesFeature = app.ServerFeatures.Get<IServerAddressesFeature>();
-              //  var address = serverAddressesFeature.Addresses.First();
+               var address = serverAddressesFeature.Addresses.First();
 
                var json = JsonSerializer.Serialize(new
                {
                     Id = Guid.NewGuid().ToString(),
                     Name = "CacheService",
-                    Url = "http://cacheService:7000"
+                    Url = config["app_host"]
                });
                var data = new StringContent(json, Encoding.UTF8, "application/json");
 

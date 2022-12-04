@@ -14,4 +14,4 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0
 ENV ASPNETCORE_URLS=http://+:4000  
 WORKDIR /app
 COPY --from=build /app/AdminService/out .
-ENTRYPOINT ["dotnet", "AdminService.dll"]
+ENTRYPOINT ["/root/wait-for-it.sh", "authService:6000", "-t", "120", "--", "dotnet", "AdminService.dll"]

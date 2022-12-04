@@ -11,7 +11,7 @@ namespace CacheService.Models
 
           public string Key { get; set; }
 
-          public string Cache { get; set; }
+          public object Cache { get; set; }
 
           public DateTime ExpirationTime { get; }
      }

@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using CacheService.ExtensionMethods;
 using CacheService.Middlewares;
 using CacheService.Services;
+using StackExchange.Redis;
 
 namespace CacheService
 {
@@ -30,6 +31,14 @@ namespace CacheService
                });
                services.AddScoped<CurrentServiceRequest>();
                services.AddSingleton<Services.CacheService>();
+
+               var redisOptions = ConfigurationOptions.Parse("cache:6379");
+               redisOptions.Password = "RRnFPZ93tjBHB9W62p";
+               redisOptions.AbortOnConnectFail = false;
+
+               var multiplexer = ConnectionMultiplexer.Connect(redisOptions);
+               services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+               services.AddDistributedMemoryCache();
           }
 
           // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,7 +55,7 @@ namespace CacheService
 
                app.UseRouting();
 
-               app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+               //app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 
                app.UseAuthorization();
 

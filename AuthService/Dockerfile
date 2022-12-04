@@ -14,4 +14,4 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0
 ENV ASPNETCORE_URLS=http://+:6000  
 WORKDIR /app
 COPY --from=build /app/AuthService/out .
-ENTRYPOINT ["dotnet", "AuthService.dll"]
+ENTRYPOINT ["/root/wait-for-it.sh", "discoveryService:9000", "-t", "120", "--", "/root/wait-for-it.sh", "sqlServer:1433","-t", "120", "--", "dotnet", "AuthService.dll"]

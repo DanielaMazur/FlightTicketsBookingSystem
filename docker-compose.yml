@@ -14,6 +14,8 @@ services:
     depends_on:
       - gateway
       - elasticsearch
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
   authService:
     container_name: authService
     build: ./AuthService
@@ -32,6 +34,41 @@ services:
     image: cache-service
     depends_on:
       - discoveryService
+    environment:
+      - ASPNETCORE_URLS=http://+:7000
+      - app_port=7000
+      - app_host=http://cacheService:7000
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
+  cacheService2:
+    container_name: cacheService2
+    build: ./CacheService
+    ports:
+      - "7001:7000"
+    image: cache-service
+    depends_on:
+      - discoveryService
+    environment:
+      - ASPNETCORE_URLS=http://+:7000
+      - app_host=http://cacheService2:7000
+      - app_port=7000
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
+  cacheService3:
+    container_name: cacheService3
+    build: ./CacheService
+    ports:
+      - "7002:7000"
+    image: cache-service
+    depends_on:
+      - discoveryService
+    environment:
+      - ASPNETCORE_URLS=http://+:7000
+      - app_port=7000
+      - app_host=http://cacheService3:7000
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
+
   adminService:
     container_name: adminService
     build: ./AdminService
@@ -39,8 +76,9 @@ services:
       - "4000:4000"
     image: admin-service
     depends_on:
-      - discoveryService
       - authService
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
   customerService:
     container_name: customerService
     build: ./CustomerService
@@ -49,6 +87,8 @@ services:
     image: customer-service
     depends_on:
       - discoveryService
+    volumes:
+      - ./wait-for-it.sh:/root/wait-for-it.sh
   sqlServer:
     container_name: sqlServer
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -57,6 +97,16 @@ services:
     environment:
       SA_PASSWORD: "123Qwerty_"
       ACCEPT_EULA: "Y"
+  cache:
+    container_name: cache
+    image: redis:6.2-alpine
+    restart: always
+    environment:
+      - REDIS_PASSWORD=RRnFPZ93tjBHB9W62p
+      - REDIS_PORT=6379
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
 
   elasticsearch:
     container_name: elasticsearch
