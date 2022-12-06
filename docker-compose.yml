@@ -34,38 +34,7 @@ services:
     image: cache-service
     depends_on:
       - discoveryService
-    environment:
-      - ASPNETCORE_URLS=http://+:7000
-      - app_port=7000
-      - app_host=http://cacheService:7000
-    volumes:
-      - ./wait-for-it.sh:/root/wait-for-it.sh
-  cacheService2:
-    container_name: cacheService2
-    build: ./CacheService
-    ports:
-      - "7001:7000"
-    image: cache-service
-    depends_on:
-      - discoveryService
-    environment:
-      - ASPNETCORE_URLS=http://+:7000
-      - app_host=http://cacheService2:7000
-      - app_port=7000
-    volumes:
-      - ./wait-for-it.sh:/root/wait-for-it.sh
-  cacheService3:
-    container_name: cacheService3
-    build: ./CacheService
-    ports:
-      - "7002:7000"
-    image: cache-service
-    depends_on:
-      - discoveryService
-    environment:
-      - ASPNETCORE_URLS=http://+:7000
-      - app_port=7000
-      - app_host=http://cacheService3:7000
+      - redis-sentinel
     volumes:
       - ./wait-for-it.sh:/root/wait-for-it.sh
 
@@ -79,6 +48,7 @@ services:
       - authService
     volumes:
       - ./wait-for-it.sh:/root/wait-for-it.sh
+
   customerService:
     container_name: customerService
     build: ./CustomerService
@@ -89,6 +59,7 @@ services:
       - discoveryService
     volumes:
       - ./wait-for-it.sh:/root/wait-for-it.sh
+
   sqlServer:
     container_name: sqlServer
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -97,16 +68,99 @@ services:
     environment:
       SA_PASSWORD: "123Qwerty_"
       ACCEPT_EULA: "Y"
-  cache:
-    container_name: cache
+
+  redis-master:
+    container_name: redis-master
     image: redis:6.2-alpine
     restart: always
     environment:
-      - REDIS_PASSWORD=RRnFPZ93tjBHB9W62p
+      - ALLOW_EMPTY_PASSWORD=yes
       - REDIS_PORT=6379
+      - REDIS_REPLICATION_MODE=master
     ports:
       - "6379:6379"
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: redis-server --save 20 1 --loglevel warning
+
+  redis-replica-1:
+    container_name: redis-replica-1
+    image: redis:6.2-alpine
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_PORT=6379
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_PASSWORD=
+    depends_on:
+      - redis-master
+    ports:
+      - "6380:6379"
+    command: redis-server --slaveof redis-master 6379 --save 20 1 --loglevel warning
+
+  redis-replica-2:
+    container_name: redis-replica-2
+    image: redis:6.2-alpine
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_PORT=6379
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_PASSWORD=
+    depends_on:
+      - redis-master
+    ports:
+      - "6381:6379"
+    command: redis-server --slaveof redis-master 6379 --save 20 1 --loglevel warning
+
+  redis-sentinel:
+    container_name: redis-sentinel
+    image: redis:6.2-alpine
+    # image: "bitnami/redis-sentinel:latest"
+    # environment:
+    #   - REDIS_MASTER_HOST=redis-master
+    #   - REDIS_SENTINEL_FAILOVER_TIMEOUT=20000
+    #   - REDIS_MASTER_SET=redis-master
+    command: "redis-server /etc/sentinel.conf --sentinel"
+    volumes:
+      - "./sentinel.conf:/etc/sentinel.conf"
+    depends_on:
+      - redis-master
+      - redis-replica-1
+      - redis-replica-2
+    ports:
+      - "26379:26379"
+
+  redis-sentinel-1:
+    container_name: redis-sentinel-1
+    image: redis:6.2-alpine
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_SENTINEL_FAILOVER_TIMEOUT=20000
+      - REDIS_MASTER_SET=redis-master
+    depends_on:
+      - redis-master
+      - redis-replica-1
+      - redis-replica-2
+    ports:
+      - "26380:26379"
+
+  redis-sentinel-2:
+    container_name: redis-sentinel-2
+    image: redis:6.2-alpine
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_SENTINEL_FAILOVER_TIMEOUT=20000
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=20000
+      - REDIS_MASTER_SET=redis-master
+    depends_on:
+      - redis-master
+      - redis-replica-1
+      - redis-replica-2
+    ports:
+      - "26381:26379"
 
   elasticsearch:
     container_name: elasticsearch

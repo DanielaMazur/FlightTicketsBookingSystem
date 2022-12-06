@@ -26,7 +26,6 @@ namespace CacheService
           {
                try
                {
-                    Console.WriteLine("GetEnvironmentVariable {0}", Environment.GetEnvironmentVariable("app_port"));
                     CreateHostBuilder(args).Build().Run();
                }
                catch (Exception ex)
