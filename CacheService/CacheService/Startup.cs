@@ -35,29 +35,28 @@ namespace CacheService
 
                //var santinel = ConnectionMultiplexer.SentinelConnect("redis-sentinel:26379");
                //ConnectionMultiplexer.Connect("redis-master:6379,redis-replica-1:6380,redis-replica-2:6381")
-               ConfigurationOptions sentinelConfig = new ConfigurationOptions
-               {
-                    ServiceName = "mymaster",
-                    //CommandMap = CommandMap.Sentinel
-               };
-               sentinelConfig.EndPoints.Add("redis-sentinel", 26379);
+               //ConfigurationOptions sentinelConfig = new ConfigurationOptions
+               //{
+               //     ServiceName = "mymaster",
+               //     CommandMap = CommandMap.Sentinel,
+               //};
+               //sentinelConfig.EndPoints.Add("redis-sentinel", 26379);
                //sentinelConfig.EndPoints.Add("redis-sentinel-1", 26379);
                //sentinelConfig.EndPoints.Add("redis-sentinel-2", 26379);
 
-               var masterConfig = new ConfigurationOptions()
-               {
-                    ServiceName = "mymaster"
-               };
+               //var masterConfig = new ConfigurationOptions()
+               //{
+               //     ServiceName = "mymaster",
+               //     Password = "my_master_password"
+               //};
                //masterConfig.EndPoints.Add("redis-master", 6379);
                ////masterConfig.EndPoints.Add("redis-slave", 6379);
                //masterConfig.EndPoints.Add("redis-replica-1", 6379);
                //masterConfig.EndPoints.Add("redis-replica-2", 6379);
 
-               var multiplexer = ConnectionMultiplexer.SentinelConnect(sentinelConfig);
-               services.AddSingleton<IConnectionMultiplexer>(_ => multiplexer.GetSentinelMasterConnection(masterConfig));
+               //var multiplexer = ConnectionMultiplexer.SentinelConnect(sentinelConfig);
+               //services.AddScoped<ConnectionMultiplexer>(_ => multiplexer);
                services.AddDistributedMemoryCache();
-               multiplexer.ConfigurationChanged +=
-                    ((sender, args) => Console.WriteLine("master changed!!!!!!!!!"));
           }
 
           // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
